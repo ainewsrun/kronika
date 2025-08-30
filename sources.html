@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sources Management – AI News Global Chronicle</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+    }
+    h1 {
+      margin-bottom: 1rem;
+    }
+    form {
+      margin-bottom: 2rem;
+    }
+    input[type="text"], input[type="url"], input[type="number"] {
+      padding: 0.3rem;
+      margin-right: 0.5rem;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 1rem;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.4rem 0.6rem;
+      text-align: left;
+    }
+    th {
+      background-color: #f9f9f9;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>Sources Management</h1>
+  <p>Here you can view all registered RSS sources and add new ones.</p>
+  <form id="addForm">
+    <label>Name: <input type="text" id="name" required></label>
+    <label>URL: <input type="url" id="url" required></label>
+    <label>Trust (0–1): <input type="number" id="trust" step="0.1" min="0" max="1" value="0.5" required></label>
+    <button type="submit">Add Source</button>
+    <span id="msg" class="error"></span>
+  </form>
+  <table id="sourcesTable">
+    <thead>
+      <tr><th>ID</th><th>Name</th><th>URL</th><th>Trust</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function loadSources() {
+      const res = await fetch('http://localhost:8000/sources');
+      const sources = await res.json();
+      const tbody = document.querySelector('#sourcesTable tbody');
+      tbody.innerHTML = '';
+      sources.forEach(src => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${src.id}</td><td>${src.name}</td><td><a href="${src.url}" target="_blank">${src.url}</a></td><td>${src.trust}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById('addForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('name').value.trim();
+      const url = document.getElementById('url').value.trim();
+      const trust = parseFloat(document.getElementById('trust').value);
+      const msgEl = document.getElementById('msg');
+      msgEl.textContent = '';
+      try {
+        const res = await fetch('http://localhost:8000/sources', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, url, trust })
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.detail || 'Failed to add source');
+        }
+        // Clear inputs
+        document.getElementById('name').value = '';
+        document.getElementById('url').value = '';
+        document.getElementById('trust').value = '0.5';
+        await loadSources();
+      } catch (err) {
+        msgEl.textContent = err.message;
+      }
+    });
+
+    // Initial load
+    loadSources();
+  </script>
+</body>
+</html>

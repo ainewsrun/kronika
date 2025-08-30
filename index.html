@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI News Global Chronicle</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+      line-height: 1.5;
+    }
+    h1 {
+      margin-bottom: 1rem;
+    }
+    form {
+      margin-bottom: 1rem;
+    }
+    .item {
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #ddd;
+    }
+    .title a {
+      color: #0070f3;
+      text-decoration: none;
+    }
+    .title a:hover {
+      text-decoration: underline;
+    }
+    .meta {
+      font-size: 0.8em;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>AI News Global Chronicle</h1>
+  <form id="searchForm">
+    <label>
+      Country code (optional):
+      <input type="text" id="country" placeholder="CZ" style="width: 4rem;">
+    </label>
+    <button type="submit">Load</button>
+  </form>
+  <div id="results"></div>
+
+  <script>
+    async function fetchTimeline(country) {
+      let url = 'http://localhost:8000/timeline?limit=50';
+      if (country) {
+        url += '&country=' + encodeURIComponent(country);
+      }
+      const res = await fetch(url);
+      return await res.json();
+    }
+
+    function render(items) {
+      const container = document.getElementById('results');
+      container.innerHTML = '';
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'item';
+        const date = new Date(item.published);
+        const meta = `${date.toLocaleString()}${item.source && item.source.name ? ' – ' + item.source.name : ''}`;
+        div.innerHTML = `
+          <div class="title"><a href="${item.link}" target="_blank">${item.title}</a></div>
+          <div class="meta">${meta}</div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    document.getElementById('searchForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const country = document.getElementById('country').value.trim();
+      const items = await fetchTimeline(country);
+      render(items);
+    });
+
+    // Initial load
+    fetchTimeline().then(render);
+  </script>
+</body>
+</html>
